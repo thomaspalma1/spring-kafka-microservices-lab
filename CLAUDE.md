@@ -1,9 +1,9 @@
 # Spring Kafka Microservices Lab
 
-Event-driven microservices built with Spring Boot and Apache Kafka. Five independent services
-(products, customers, orders, billing and logistics) each own their database and talk to each
-other through Kafka events. Billing generates invoices as JasperReports PDFs stored in MinIO,
-and external systems integrate through webhooks.
+Event-driven microservices built with Spring Boot and Apache Kafka. Web and mobile channels
+manage products and customers and create orders. Orders charges the customer through the bank,
+and once the bank confirms the payment by webhook, the order flows through Kafka to billing
+(invoice PDF built with JasperReports and stored in MinIO) and logistics (shipment tracking).
 
 ## Tech Stack
 - Java 21
@@ -11,70 +11,87 @@ and external systems integrate through webhooks.
 - Maven
 - Spring for Apache Kafka (Kafka in KRaft mode, no ZooKeeper)
 - Spring Data JPA and Hibernate
-- PostgreSQL (one database per service)
+- PostgreSQL (one container per service that has a database)
+- Spring Boot Docker Compose support (starts each service's database)
 - springdoc-openapi
 - MinIO (S3-compatible object storage) with the MinIO Java SDK
 - JasperReports
-- Docker and Docker Compose (external services only)
+- Docker and Docker Compose
 - Testcontainers
 
 ## Repository layout
 Each microservice is an independent Spring Boot Maven project in its own directory, with its
-own ./mvnw, pom.xml and database:
+own ./mvnw and pom.xml:
 
-| Service           | Port | Owns                                  |
-|-------------------|------|---------------------------------------|
-| product-service   | 8081 | products, prices and stock            |
-| customer-service  | 8082 | customers and addresses               |
-| order-service     | 8083 | orders and order items                |
-| billing-service   | 8084 | invoices and their PDF files          |
-| logistics-service | 8085 | shipments and delivery status         |
+| Service   | Port | Database (host port) | Responsibility                                     |
+|-----------|------|----------------------|----------------------------------------------------|
+| products  | 8081 | products (5433)      | product registration (create, update, list)        |
+| customers | 8082 | customers (5434)     | customer registration (create, update, list)       |
+| orders    | 8083 | orders (5435)        | orders, payment with the bank and order status     |
+| billing   | 8084 | none                 | invoices for paid orders                           |
+| logistics | 8085 | none                 | shipment tracking for invoiced orders              |
 
-- docker-compose.yaml at the root starts only the external services: Kafka, PostgreSQL (one
-  container, one database per service) and MinIO. The microservices run on the host.
+- Each service with a database has its own compose.yaml that starts only its PostgreSQL.
+  spring-boot-docker-compose starts it on ./mvnw spring-boot:run and stops it on shutdown;
+  tests skip it and use Testcontainers.
+- docker-compose.yaml at the root starts the shared external services: Kafka and MinIO.
 - No shared code module between services: each service declares its own event records.
-- Do not add spring-boot-docker-compose; the root compose file is shared by all services.
+- services/ is not one of the microservices. Leave it alone unless asked.
 
 ## Commands
-- External services: docker compose up -d       (Kafka 9092, PostgreSQL 5432, MinIO 9000, console 9001)
+- Shared services: docker compose up -d          (Kafka 9092, MinIO 9000, console 9001)
+- Run a service: cd <service> && ./mvnw spring-boot:run   (starts the service's database too)
 - Build and tests: cd <service> && ./mvnw verify  (Docker must be running for Testcontainers)
-- Run a service: cd <service> && ./mvnw spring-boot:run
-- Stop: docker compose down (keeps the volumes; never add -v unless asked, it wipes all data)
+- Stop shared services: docker compose down (keeps the volumes; never add -v unless asked,
+  it wipes all data)
 
 ## Service structure
-- Base package io.github.thomaspalma1.<domain>: product, customer, order, billing, logistics.
+- Base package io.github.thomaspalma1.<service>: products, customers, orders, billing, logistics.
 - Subpackages: api (controllers, request and response records), domain (entities, repositories,
   services), messaging (producers, consumers, event records), config. Only where the service
-  needs them: storage (MinIO), report (JasperReports), webhook.
+  needs them: storage (MinIO, billing), report (JasperReports, billing), webhook (orders).
+
+## Order flow
+1. A web or mobile channel creates an order in orders.
+2. orders sends the payment transaction to the bank.
+3. The bank sends the payment status back to orders through a webhook.
+4. When the payment is approved, orders publishes the order to orders.paid.
+5. billing consumes orders.paid and creates the invoice.
+6. billing publishes the invoiced order to orders.invoiced.
+7. orders consumes orders.invoiced to update the order status, and logistics consumes it to
+   register the shipment tracking.
+8. logistics publishes the shipment to orders.shipped, and orders consumes it to update the
+   order status.
 
 ## Service boundaries
 - A service reads and writes only its own database. Never connect to another service's
   database or join data across services.
-- Services communicate asynchronously through Kafka. Data a service needs from another one
-  (customer name, product price) is copied from that service's events into its own tables.
-- Prefer events to synchronous calls between services; a synchronous call needs a reason,
-  a timeout and a fallback.
+- products and customers are registration services used by the channels; they publish no events.
+- The order flow after the payment is asynchronous through Kafka. A synchronous call between
+  services needs a reason, a timeout and a fallback.
 
 ## Kafka
-- Topic names are <domain>.<event> in kebab-case and past tense: order.created,
-  invoice.issued, shipment.status-changed.
+- Topics: orders.paid (produced by orders), orders.invoiced (billing), orders.shipped
+  (logistics). New topics follow <domain>.<event> in kebab-case and past tense.
 - The producing service declares its topics as NewTopic beans with partitions and replicas
   from configuration. Broker auto topic creation is off; consumers never create topics.
-- The message key is the aggregate id (orderId, invoiceId), so every event of one aggregate
-  goes to the same partition and keeps its order.
+- The message key is the orderId, so every event of one order goes to the same partition and
+  keeps its order.
 - Payloads are JSON. Every event is a record with eventId (UUID), occurredAt and the business
   fields. Evolve events by adding fields only; never rename or remove a field consumers read.
 - Producers send no Java type headers; each consumer deserializes into its own event record.
-- The consumer group id is spring.application.name, so each service gets every event once and
-  instances of the same service share the partitions.
-- Events are published only after the database transaction commits
+- The consumer group id is spring.application.name, so each service gets every event once
+  (orders and logistics both receive orders.invoiced) and instances of the same service share
+  the partitions.
+- Services with a database publish events only after the transaction commits
   (@TransactionalEventListener AFTER_COMMIT).
-- Consumers are idempotent: Kafka delivers at least once, so they store the processed eventId
-  and skip duplicates.
+- Consumers are idempotent because Kafka delivers at least once. Services with a database store
+  the processed eventId and skip duplicates; services without one produce the same result for
+  the same event (same object key, same published event).
 - Failed records are retried with backoff by DefaultErrorHandler, then sent to the dead letter
   topic <topic>.DLT. Deserialization and validation errors are not retried.
 
-## Persistence
+## Persistence (products, customers, orders)
 - Hibernate creates and updates the schema from the entities (ddl-auto: update). open-in-view is off.
 - Enums with @Enumerated(EnumType.STRING); @ManyToOne with fetch LAZY.
 - Listings use projections or @EntityGraph to avoid N+1 queries.
@@ -89,10 +106,18 @@ own ./mvnw, pom.xml and database:
 - Errors are ProblemDetail responses built by GlobalExceptionHandler.
 - Constructor injection only; @Transactional on services, never on controllers.
 
+## Payment and webhooks (orders)
+- orders sends the payment transaction to the bank over HTTP, with a timeout. The payment status
+  comes back later through the webhook.
+- The bank calls POST /webhooks/bank. Verify the HMAC-SHA256 signature header with the shared
+  secret before parsing the body; a missing or invalid signature returns 401.
+- Answer with 2xx fast: validate, record the status and publish to Kafka after the commit.
+- Deduplicate deliveries by the bank's delivery id.
+
 ## Object storage (MinIO)
-- Files go to MinIO. The database stores only the bucket and object key, never the file bytes.
+- Files go to MinIO. Services store or send only the bucket and object key, never file bytes.
 - Bucket names come from configuration; the service creates its bucket at startup if missing.
-- Object keys follow <resource>/<id>/<file-name>, like invoices/{invoiceId}/invoice-{number}.pdf.
+- Object keys follow <resource>/<id>/<file-name>, like invoices/{orderId}/invoice-{number}.pdf.
 - Clients download files through presigned URLs with a configured expiry, never public buckets.
 - All MinIO calls go through the storage package of the service.
 
@@ -101,15 +126,7 @@ own ./mvnw, pom.xml and database:
   cached, never per request.
 - The service builds the report data and passes it as parameters and a
   JRBeanCollectionDataSource of records; templates never run SQL.
-- Generated PDFs are stored in MinIO, and the owning entity keeps the object key.
-
-## Webhooks
-- Incoming webhooks arrive at POST /webhooks/<source>. Verify the HMAC-SHA256 signature header
-  with the shared secret before parsing the body; a missing or invalid signature returns 401.
-- Answer with 2xx fast: validate, publish the event to Kafka and process it asynchronously.
-- Deduplicate deliveries by the sender's delivery id.
-- Outgoing webhooks are signed the same way, retried with backoff, and every delivery attempt
-  is recorded.
+- Invoice PDFs are stored in MinIO, and the orders.invoiced event carries the object key.
 
 ## Clean code
 Naming:
@@ -124,15 +141,15 @@ Naming:
   for DTOs, `Summary` for projections, `Exception` for exceptions, `Event` for Kafka event
   records, `Producer` and `Consumer` for Kafka classes.
 - Methods are verbs in camelCase that say what they do: `createOrder`, `issueInvoice`,
-  `dispatchShipment`.
+  `registerShipment`.
 - One word per concept across the code base: `find` for queries, `create` for new records,
   `get` for accessors. Do not mix `create`, `add` and `new` for the same action.
 - Booleans read as questions: `isPaid`, `hasStock`, `canShip`.
 - Collections are plural: `orders`, `orderItems`, `shipments`.
-- Constants in UPPER_SNAKE_CASE, with the unit when there is one: `MAX_DELIVERY_ATTEMPTS`,
+- Constants in UPPER_SNAKE_CASE, with the unit when there is one: `BANK_TIMEOUT_SECONDS`,
   `PRESIGNED_URL_EXPIRY_MINUTES`.
 - No type or noise words in names: `orders`, not `orderList` or `theOrders`.
-- Test methods describe the behavior they check: `skipsDuplicateOrderCreatedEvent`,
+- Test methods describe the behavior they check: `skipsDuplicateOrderPaidEvent`,
   `rejectsWebhookWithInvalidSignature`.
 
 General:
@@ -144,10 +161,12 @@ General:
 ## Testing
 - Layers: unit (JUnit 5, Mockito), repository (@DataJpaTest with Testcontainers PostgreSQL),
   web (@WebMvcTest), integration (@SpringBootTest with Testcontainers Kafka, PostgreSQL and MinIO).
+- Testcontainers images use the same pinned versions as the compose files.
 - Producers and consumers are tested against a real Kafka container. Wait with Awaitility,
   never Thread.sleep.
 - Every consumer has a test for a duplicate event (one effect only) and for dead letter routing.
-- Webhook tests cover valid, invalid and missing signatures.
+- The bank is replaced by MockRestServiceServer; webhook tests cover valid, invalid and missing
+  signatures.
 - Tests never call real external systems; CI must run without secrets.
 
 ## Rules
@@ -155,5 +174,5 @@ General:
   endpoints, configuration, comments and docs.
 - No "latest" versions: pin every Docker image tag, dependency and tool.
 - Never read or write .env, keys or credential files. Database passwords, MinIO credentials and
-  webhook secrets come from environment variables; defaults exist only for the local compose stack.
+  webhook secrets come from environment variables; defaults exist only for the local compose files.
 - Indent Java and XML with tabs, like the files generated by Spring Initializr.
