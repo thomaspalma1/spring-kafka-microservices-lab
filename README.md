@@ -1,1 +1,39 @@
-# spring-kafka-microservices-lab
+### Spring Kafka Microservices Lab
+
+<p align="justify">
+    <img
+        src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/java/java-original.svg"
+        width="50"
+        height="50"
+    />
+    <img
+        src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/spring/spring-original.svg"
+        width="50"
+        height="50"
+    />
+    <img
+        src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/hibernate/hibernate-original.svg"
+        width="50"
+        height="50"
+    />
+    <img
+        src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/apachekafka/apachekafka-original.svg"
+        width="50"
+        height="50"
+    />
+    <img
+        src="/docs/minIO.svg"
+        width="50"
+        height="50"
+    />
+    <img
+        src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/postgresql/postgresql-original.svg"
+        width="50"
+        height="50"
+    />
+    <img
+        src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/docker/docker-original.svg"
+        width="50"
+        height="50"
+    />
+</p>
