@@ -16,7 +16,7 @@ create table customers (
 	name varchar(150) not null,
 	cpf char(11) not null, -- Brazilian personal ID number
 	street varchar(100),
-	number varchar(10),
+	street_number varchar(10),
 	neighborhood varchar(100),
 	email varchar(150),
 	phone varchar(20)
