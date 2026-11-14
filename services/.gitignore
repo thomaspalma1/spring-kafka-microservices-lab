@@ -31,3 +31,6 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### PostgreSQL data (bind mount of services/src/database/docker-compose.yaml) ###
+src/database/data/
