@@ -1,3 +1,7 @@
 spring:
   application:
     name: products
+  datasource:
+    url: jdbc:postgresql://localhost:5555/octsocproducts
+    username: ${POSTGRES_USER:example}
+    password: ${POSTGRES_PASSWORD:example}
