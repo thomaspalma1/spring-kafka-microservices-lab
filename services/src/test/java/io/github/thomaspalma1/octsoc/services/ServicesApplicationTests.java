@@ -1,4 +1,4 @@
-package io.github.thomaspalma1.services;
+package io.github.thomaspalma1.octsoc.services;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;

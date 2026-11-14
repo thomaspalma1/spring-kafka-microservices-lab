@@ -1,4 +1,4 @@
-package io.github.thomaspalma1.products;
+package io.github.thomaspalma1.octsoc.products;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

@@ -1,4 +1,4 @@
-package io.github.thomaspalma1.products;
+package io.github.thomaspalma1.octsoc.customers;
 
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;

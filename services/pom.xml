@@ -8,7 +8,7 @@
 		<version>4.1.2</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
-	<groupId>io.github.thomaspalma1</groupId>
+	<groupId>io.github.thomaspalma1.octsoc</groupId>
 	<artifactId>services</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name/>

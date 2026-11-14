@@ -1,13 +1,13 @@
-package io.github.thomaspalma1.services;
+package io.github.thomaspalma1.octsoc.customers;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class ServicesApplication {
+public class CustomersApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(ServicesApplication.class, args);
+		SpringApplication.run(CustomersApplication.class, args);
 	}
 
 }

@@ -1,0 +1,9 @@
+services:
+  postgres:
+    image: postgres:18.7
+    container_name: db_octsoc
+    restart: always
+    environment:
+      POSTGRES_USER: example
+      POSTGRES_PASSWORD: example
+      POSTGRES_MULTIPLE_DATABASE: octsocproducts, octsocorders, octsoccustomers

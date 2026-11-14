@@ -2,7 +2,7 @@ services:
   postgres:
     image: 'postgres:18.7'
     environment:
-      - 'POSTGRES_DB=customers'
+      - 'POSTGRES_DB=octsoccustomers'
       - 'POSTGRES_USER=customers'
       - 'POSTGRES_PASSWORD=customers'
     ports:

@@ -1,4 +1,4 @@
-package io.github.thomaspalma1.customers;
+package io.github.thomaspalma1.octsoc.customers;
 
 import org.springframework.boot.SpringApplication;
 

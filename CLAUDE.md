@@ -1,6 +1,7 @@
 # Spring Kafka Microservices Lab
 
-Event-driven microservices built with Spring Boot and Apache Kafka. Web and mobile channels
+Octsoc (Costco spelled backwards) is a study e-commerce platform made of event-driven
+microservices built with Spring Boot and Apache Kafka. Web and mobile channels
 manage products and customers and create orders. Orders charges the customer through the bank,
 and once the bank confirms the payment by webhook, the order flows through Kafka to billing
 (invoice PDF built with JasperReports and stored in MinIO) and logistics (shipment tracking).
@@ -23,13 +24,13 @@ and once the bank confirms the payment by webhook, the order flows through Kafka
 Each microservice is an independent Spring Boot Maven project in its own directory, with its
 own ./mvnw and pom.xml:
 
-| Service   | Port | Database (host port) | Responsibility                                     |
-|-----------|------|----------------------|----------------------------------------------------|
-| products  | 8081 | products (5433)      | product registration (create, update, list)        |
-| customers | 8082 | customers (5434)     | customer registration (create, update, list)       |
-| orders    | 8083 | orders (5435)        | orders, payment with the bank and order status     |
-| billing   | 8084 | none                 | invoices for paid orders                           |
-| logistics | 8085 | none                 | shipment tracking for invoiced orders              |
+| Service   | Port | Database (host port)   | Responsibility                                 |
+|-----------|------|------------------------|------------------------------------------------|
+| products  | 8081 | octsocproducts (5433)  | product registration (create, update, list)    |
+| customers | 8082 | octsoccustomers (5434) | customer registration (create, update, list)   |
+| orders    | 8083 | octsocorders (5435)    | orders, payment with the bank and order status |
+| billing   | 8084 | none                   | invoices for paid orders                       |
+| logistics | 8085 | none                   | shipment tracking for invoiced orders          |
 
 - Each service with a database has its own compose.yaml that starts only its PostgreSQL.
   spring-boot-docker-compose starts it on ./mvnw spring-boot:run and stops it on shutdown;
@@ -46,7 +47,10 @@ own ./mvnw and pom.xml:
   it wipes all data)
 
 ## Service structure
-- Base package io.github.thomaspalma1.<service>: products, customers, orders, billing, logistics.
+- Maven groupId io.github.thomaspalma1.octsoc; the artifactId is the service name.
+- Base package io.github.thomaspalma1.octsoc.<service>: products, customers, orders, billing,
+  logistics.
+- Databases are named octsoc<service>: octsocproducts, octsoccustomers, octsocorders.
 - Subpackages: api (controllers, request and response records), domain (entities, repositories,
   services), messaging (producers, consumers, event records), config. Only where the service
   needs them: storage (MinIO, billing), report (JasperReports, billing), webhook (orders).
