@@ -102,7 +102,8 @@ own ./mvnw and pom.xml:
   topic <topic>.DLT. Deserialization and validation errors are not retried.
 
 ## Persistence (products, customers, orders)
-- Hibernate creates and updates the schema from the entities (ddl-auto: update). open-in-view is off.
+- postgres-schema.sql owns the schema; Hibernate never changes it (ddl-auto: none). open-in-view
+  is off.
 - Enums with @Enumerated(EnumType.STRING); @ManyToOne with fetch LAZY.
 - Listings use projections or @EntityGraph to avoid N+1 queries.
 - No hand-written queries in src/main: no JPQL or native SQL in @Query. Use Spring Data derived
