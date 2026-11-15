@@ -24,3 +24,5 @@ hs_err_pid*
 replay_pid*
 services/src/database/.env
 .vscode/settings.json
+.vscode/launch.json
+products/src/main/resources/.env
