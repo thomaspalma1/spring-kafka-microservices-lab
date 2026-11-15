@@ -17,3 +17,10 @@ spring:
 
 server:
   port: 8081
+
+springdoc:
+  open-api:
+    info:
+      title: Octsoc Products API
+      description: Product registration for the web and mobile channels.
+      version: '1.0'

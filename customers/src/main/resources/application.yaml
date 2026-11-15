@@ -8,3 +8,10 @@ spring:
 
 server:
   port: 8082
+
+springdoc:
+  open-api:
+    info:
+      title: Octsoc Customers API
+      description: Customer registration for the web and mobile channels.
+      version: '1.0'
