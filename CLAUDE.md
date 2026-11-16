@@ -57,8 +57,8 @@ own ./mvnw and pom.xml:
 - Base package io.github.thomaspalma1.octsoc.<service>: products, customers, orders, billing,
   logistics.
 - Databases are named octsoc<service>: octsocproducts, octsoccustomers, octsocorders.
-- Subpackages: api (controllers, request and response records), domain (entities, repositories,
-  services), messaging (producers, consumers, event records), config. Only where the service
+- Subpackages: api (controllers, request and response records), model (entities), repository,
+  service, messaging (producers, consumers, event records), config. Only where the service
   needs them: storage (MinIO, billing), report (JasperReports, billing), webhook (orders).
 
 ## Order flow
@@ -151,10 +151,10 @@ Naming:
 - Layer suffixes stay consistent: `Controller`, `Service`, `Repository`, `Request` and `Response`
   for DTOs, `Summary` for projections, `Exception` for exceptions, `Event` for Kafka event
   records, `Producer` and `Consumer` for Kafka classes.
-- Methods are verbs in camelCase that say what they do: `createOrder`, `issueInvoice`,
+- Methods are verbs in camelCase that say what they do: `saveOrder`, `issueInvoice`,
   `registerShipment`.
-- One word per concept across the code base: `find` for queries, `create` for new records,
-  `get` for accessors. Do not mix `create`, `add` and `new` for the same action.
+- One word per concept across the code base: `find` for queries, `save` for new records,
+  `get` for accessors. Do not mix `save`, `create`, `add` and `new` for the same action.
 - Booleans read as questions: `isPaid`, `hasStock`, `canShip`.
 - Collections are plural: `orders`, `orderItems`, `shipments`.
 - Constants in UPPER_SNAKE_CASE, with the unit when there is one: `BANK_TIMEOUT_SECONDS`,
