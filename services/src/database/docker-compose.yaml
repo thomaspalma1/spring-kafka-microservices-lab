@@ -11,3 +11,14 @@ services:
     volumes:
       - ./data:/var/lib/postgresql
       - ./docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d:ro
+
+  adminer:
+    image: adminer:6.3.0
+    container_name: adminer_octsoc
+    restart: always
+    environment:
+      ADMINER_DEFAULT_SERVER: postgres
+    ports:
+      - "8090:8080"
+    depends_on:
+      - postgres
