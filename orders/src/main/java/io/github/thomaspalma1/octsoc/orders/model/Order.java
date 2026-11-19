@@ -27,10 +27,12 @@ public class Order {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "customer_id", nullable = false)
+    @Column(name = "customer_id",
+            nullable = false)
     private Long customerId;
 
-    @Column(name = "order_date", nullable = false)
+    @Column(name = "order_date",
+            nullable = false)
     private LocalDateTime orderDate;
 
     @Column(name = "payment_key")
@@ -40,10 +42,14 @@ public class Order {
     private String notes;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "status", length = 20)
+    @Column(name = "status",
+            length = 20)
     private StatusOrder status;
 
-    @Column(name = "total", nullable = false, precision = 16, scale = 2)
+    @Column(name = "total",
+            nullable = false,
+            precision = 16,
+            scale = 2)
     private BigDecimal total;
 
     @Column(name = "tracking_code")

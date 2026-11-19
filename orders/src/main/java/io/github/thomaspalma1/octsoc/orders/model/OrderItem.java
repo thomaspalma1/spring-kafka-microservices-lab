@@ -23,16 +23,22 @@ public class OrderItem {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "order_id", nullable = false)
+    @Column(name = "order_id",
+            nullable = false)
     private Long orderId;
 
-    @Column(name = "product_id", nullable = false)
+    @Column(name = "product_id",
+            nullable = false)
     private Long productId;
 
-    @Column(name = "quantity", nullable = false)
+    @Column(name = "quantity",
+            nullable = false)
     private Integer quantity;
 
-    @Column(name = "unit_price", nullable = false, precision = 16, scale = 2)
+    @Column(name = "unit_price",
+            nullable = false,
+            precision = 16,
+            scale = 2)
     private BigDecimal unitPrice;
 
 }
