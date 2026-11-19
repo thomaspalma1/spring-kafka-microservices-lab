@@ -43,7 +43,7 @@ public class Order {
     @Column(name = "status", length = 20)
     private StatusOrder status;
 
-    @Column(name = "total", precision = 16, scale = 2)
+    @Column(name = "total", nullable = false, precision = 16, scale = 2)
     private BigDecimal total;
 
     @Column(name = "tracking_code")
