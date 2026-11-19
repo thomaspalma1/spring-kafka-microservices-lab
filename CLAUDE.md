@@ -4,7 +4,7 @@ Octsoc (Costco spelled backwards) is a study e-commerce platform made of event-d
 microservices built with Spring Boot and Apache Kafka. Web and mobile channels
 manage products and customers and create orders. Orders charges the customer through the bank,
 and once the bank confirms the payment by webhook, the order flows through Kafka to billing
-(invoice PDF built with JasperReports and stored in MinIO) and logistics (shipment tracking).
+(invoice PDF built with JasperReports and stored in RustFS) and logistics (shipment tracking).
 
 ## Tech Stack
 - Java 21
@@ -14,7 +14,7 @@ and once the bank confirms the payment by webhook, the order flows through Kafka
 - Spring Data JPA and Hibernate
 - PostgreSQL (one container with one database per service)
 - springdoc-openapi
-- MinIO (S3-compatible object storage) with the MinIO Java SDK
+- RustFS (S3-compatible object storage)
 - JasperReports
 - Docker and Docker Compose
 - Testcontainers
@@ -41,12 +41,12 @@ own ./mvnw and pom.xml:
 - Prefer plain SQL or configuration to shell scripts for simple setup tasks.
 - Each service connects through spring.datasource in application.yaml
   (jdbc:postgresql://localhost:5555/octsoc<service>); tests use Testcontainers instead.
-- docker-compose.yaml at the root starts the shared external services: Kafka and MinIO.
+- docker-compose.yaml at the root starts the shared external services: Kafka and RustFS.
 - No shared code module between services: each service declares its own event records.
 
 ## Commands
 - Database: cd services/src/database && docker compose up -d   (PostgreSQL 5555)
-- Shared services: docker compose up -d          (Kafka 9092, MinIO 9000, console 9001)
+- Shared services: docker compose up -d          (Kafka 9092, RustFS 9000, console 9001)
 - Run a service: cd <service> && ./mvnw spring-boot:run   (the database must be running)
 - Build and tests: cd <service> && ./mvnw verify  (Docker must be running for Testcontainers)
 - Stop shared services: docker compose down (keeps the volumes; never add -v unless asked,
@@ -59,7 +59,7 @@ own ./mvnw and pom.xml:
 - Databases are named octsoc<service>: octsocproducts, octsoccustomers, octsocorders.
 - Subpackages: api (controllers, request and response records), model (entities), repository,
   service, messaging (producers, consumers, event records), config. Only where the service
-  needs them: storage (MinIO, billing), report (JasperReports, billing), webhook (orders).
+  needs them: storage (RustFS, billing), report (JasperReports, billing), webhook (orders).
 
 ## Order flow
 1. A web or mobile channel creates an order in orders.
@@ -125,19 +125,19 @@ own ./mvnw and pom.xml:
 - Answer with 2xx fast: validate, record the status and publish to Kafka after the commit.
 - Deduplicate deliveries by the bank's delivery id.
 
-## Object storage (MinIO)
-- Files go to MinIO. Services store or send only the bucket and object key, never file bytes.
+## Object storage (RustFS)
+- Files go to RustFS. Services store or send only the bucket and object key, never file bytes.
 - Bucket names come from configuration; the service creates its bucket at startup if missing.
 - Object keys follow <resource>/<id>/<file-name>, like invoices/{orderId}/invoice-{number}.pdf.
 - Clients download files through presigned URLs with a configured expiry, never public buckets.
-- All MinIO calls go through the storage package of the service.
+- All RustFS calls go through the storage package of the service.
 
 ## Reports (JasperReports)
 - Templates (.jrxml) live in src/main/resources/reports/. They are compiled once at startup and
   cached, never per request.
 - The service builds the report data and passes it as parameters and a
   JRBeanCollectionDataSource of records; templates never run SQL.
-- Invoice PDFs are stored in MinIO, and the orders.invoiced event carries the object key.
+- Invoice PDFs are stored in RustFS, and the orders.invoiced event carries the object key.
 
 ## Clean code
 Naming:
@@ -171,7 +171,7 @@ General:
 
 ## Testing
 - Layers: unit (JUnit 5, Mockito), repository (@DataJpaTest with Testcontainers PostgreSQL),
-  web (@WebMvcTest), integration (@SpringBootTest with Testcontainers Kafka, PostgreSQL and MinIO).
+  web (@WebMvcTest), integration (@SpringBootTest with Testcontainers Kafka, PostgreSQL and RustFS).
 - Testcontainers images use the same pinned versions as the compose files.
 - Producers and consumers are tested against a real Kafka container. Wait with Awaitility,
   never Thread.sleep.
@@ -184,7 +184,7 @@ General:
 - Everything in English: packages, directories, files, classes, fields, tables, topics,
   endpoints, configuration, comments and docs.
 - No "latest" versions: pin every Docker image tag, dependency and tool.
-- Never read or write .env, keys or credential files. Database passwords, MinIO credentials and
+- Never read or write .env, keys or credential files. Database passwords, RustFS credentials and
   webhook secrets come from environment variables; local development defaults exist only in the
   compose files and application.yaml.
 - Indent Java and XML with tabs, like the files generated by Spring Initializr.
