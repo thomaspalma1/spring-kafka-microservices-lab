@@ -3,7 +3,7 @@ package io.github.thomaspalma1.octsoc.orders.model;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-import io.github.thomaspalma1.octsoc.orders.model.enums.StatusOrder;
+import io.github.thomaspalma1.octsoc.orders.enums.StatusOrder;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

@@ -1,4 +1,4 @@
-package io.github.thomaspalma1.octsoc.orders.model.enums;
+package io.github.thomaspalma1.octsoc.orders.enums;
 
 public enum StatusOrder {
 
