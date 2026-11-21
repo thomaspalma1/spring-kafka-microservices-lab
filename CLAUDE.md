@@ -57,9 +57,10 @@ own ./mvnw and pom.xml:
 - Base package io.github.thomaspalma1.octsoc.<service>: products, customers, orders, billing,
   logistics.
 - Databases are named octsoc<service>: octsocproducts, octsoccustomers, octsocorders.
-- Subpackages: api (controllers, request and response records), model (entities), repository,
-  service, messaging (producers, consumers, event records), config. Only where the service
-  needs them: storage (RustFS, billing), report (JasperReports, billing), webhook (orders).
+- Subpackages: controller (REST controllers), dto (request and response records), model
+  (entities), repository, service, messaging (producers, consumers, event records), config.
+  Only where the service needs them: storage (RustFS, billing), report (JasperReports,
+  billing), webhook (orders).
 
 ## Order flow
 1. A web or mobile channel creates an order in orders.
@@ -113,7 +114,13 @@ own ./mvnw and pom.xml:
 - Optimistic locking with @Version; a version conflict returns 409.
 
 ## API
-- REST endpoints under /api. DTOs are records with Bean Validation; entities never leave the API.
+- REST endpoints under /api. Entities never leave the API: controllers receive and return
+  records from the dto package.
+- `<Resource>Request` is the input record (POST/PUT body): only the fields the client may send,
+  never id, createdAt, updatedAt or version, with Bean Validation and @Valid in the controller.
+- `<Resource>Response` is the output record: what the client may see, including the id, with no
+  validation annotations.
+- The controller maps the request to the entity and the entity to the response.
 - Errors are ProblemDetail responses built by GlobalExceptionHandler.
 - Constructor injection only; @Transactional on services, never on controllers.
 
@@ -149,7 +156,7 @@ Naming:
   `InvoiceReportGenerator`, `ShipmentTracker`. Avoid vague names like `Manager`, `Helper`,
   `Utils`, `Data` or `Info`.
 - Layer suffixes stay consistent: `Controller`, `Service`, `Repository`, `Request` and `Response`
-  for DTOs, `Summary` for projections, `Exception` for exceptions, `Event` for Kafka event
+  for DTOs (never a `DTO` suffix), `Summary` for projections, `Exception` for exceptions, `Event` for Kafka event
   records, `Producer` and `Consumer` for Kafka classes.
 - Methods are verbs in camelCase that say what they do: `saveOrder`, `issueInvoice`,
   `registerShipment`.
